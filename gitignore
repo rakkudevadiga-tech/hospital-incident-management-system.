@@ -1,0 +1,15 @@
+# clasp local project metadata and authentication cache
+.clasp.json
+.clasprc.json
+
+# Local environment / credential files
+.env
+.env.*
+*.pem
+*.key
+credentials.json
+
+# Operating system/editor noise
+.DS_Store
+Thumbs.db
+.vscode/

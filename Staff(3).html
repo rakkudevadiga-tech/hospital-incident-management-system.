@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    *{box-sizing:border-box}body{margin:0;background:#f1f5f9;color:#172033;font:15px Arial,sans-serif}
+    header{background:#17324d;color:#fff;padding:18px}header h1{font-size:21px;margin:0 0 6px}
+    main{max-width:850px;margin:22px auto;padding:0 12px}.panel{background:#fff;border:1px solid #dbe3ed;border-radius:12px;padding:18px;margin-bottom:15px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.wide{grid-column:1/-1}
+    label{display:block;font-weight:bold;margin:10px 0 5px}input,select,textarea{width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:7px;font:inherit;background:#fff}
+    textarea{min-height:90px}button{border:0;border-radius:7px;padding:12px 16px;background:#2563eb;color:#fff;cursor:pointer;font-weight:bold}button:disabled{opacity:.6;cursor:wait}
+    .muted{color:#64748b}.success{color:#15803d;background:#f0fdf4;padding:12px;border-radius:7px}.error{color:#b91c1c;background:#fef2f2;padding:12px;border-radius:7px}
+    @media(max-width:600px){.grid{grid-template-columns:1fr}.wide{grid-column:auto}main{margin:12px auto}header h1{font-size:19px}}
+  </style>
+</head>
+<body>
+<header><h1>Hospital Incident Reporting Form</h1><div>Staff reporting portal</div></header>
+<main>
+  <div class="panel">
+    <h2>Report an incident or near miss</h2>
+    <p class="muted">Use this form to report patient safety incidents, medication errors, falls, laboratory issues, infection-control events, equipment problems, documentation errors, or near misses. This page does not show management records.</p>
+    <form id="staffForm" onsubmit="submitStaffIncident(event)">
+      <div class="grid">
+        <div><label>Reporter name *</label><input name="ReporterName" required maxlength="150"></div>
+        <div><label>Reporter role/designation</label><input name="ReporterRole" maxlength="100" placeholder="e.g. Nurse, Pharmacist, Technician"></div>
+        <div><label>Department *</label><input name="Department" required maxlength="120" placeholder="e.g. Emergency, Ward, Laboratory"></div>
+        <div><label>Incident date *</label><input name="IncidentDate" id="incidentDate" type="date" required></div>
+        <div><label>Incident time</label><input name="IncidentTime" type="time"></div>
+        <div><label>Incident type *</label><select name="IncidentType" required>
+          <option value="">Select incident type</option><option>Patient safety</option><option>Medication</option><option>Patient fall</option><option>Laboratory</option><option>Infection control</option><option>Equipment</option><option>Documentation</option><option>Near miss</option><option>Other</option>
+        </select></div>
+        <div><label>Location / ward</label><input name="Location" maxlength="150" placeholder="e.g. Ward 2, Pharmacy"></div>
+        <div><label>Severity *</label><select name="Severity" required><option value="">Select severity</option><option>Low</option><option>Moderate</option><option>High</option><option>Critical</option></select></div>
+        <div><label>Injury or harm</label><select name="InjuryOrHarm"><option>No</option><option>Yes</option><option>Near miss</option><option>Unknown</option></select></div>
+        <div class="wide"><label>Incident description *</label><textarea name="Description" required maxlength="5000" placeholder="What happened? Include relevant facts. Avoid unnecessary patient-identifying information."></textarea></div>
+        <div class="wide"><label>Immediate action taken</label><textarea name="ImmediateAction" maxlength="3000" placeholder="What was done immediately to make the situation safe?"></textarea></div>
+      </div>
+      <p><button id="submitBtn" type="submit">Submit incident report</button></p>
+    </form>
+    <div id="message" role="status" aria-live="polite"></div>
+  </div>
+</main>
+<script>
+  // Use today's date as a convenience; staff may change it to the actual incident date.
+  (function(){
+    const el=document.getElementById('incidentDate');
+    const now=new Date();
+    el.value=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+  })();
+  function submitStaffIncident(event){
+    event.preventDefault();
+    const form=event.target, btn=document.getElementById('submitBtn'), msg=document.getElementById('message');
+    const data={};
+    new FormData(form).forEach((value,key)=>data[key]=value);
+    btn.disabled=true;btn.textContent='Submitting…';msg.className='';msg.textContent='Submitting report securely…';
+    google.script.run
+      .withSuccessHandler(function(result){
+        btn.disabled=false;btn.textContent='Submit incident report';
+        form.reset();
+        const now=new Date();
+        document.getElementById('incidentDate').value=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+        msg.className='success';
+        msg.textContent='Report submitted successfully. Your incident number is '+result.incidentId+'. Please keep this number for reference.';
+      })
+      .withFailureHandler(function(error){
+        btn.disabled=false;btn.textContent='Submit incident report';msg.className='error';
+        msg.textContent='Unable to submit: '+(error&&error.message?error.message:String(error))+' If this continues, contact hospital management.';
+      })
+      .saveIncident(data);
+  }
+</script>
+</body>
+</html>
